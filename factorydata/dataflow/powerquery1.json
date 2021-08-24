@@ -1,0 +1,19 @@
+{
+	"name": "powerquery1",
+	"properties": {
+		"type": "WranglingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"name": "PropertyAssessments",
+					"script": "source(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~>  PropertyAssessments",
+					"dataset": {
+						"referenceName": "PropertyAssessments",
+						"type": "DatasetReference"
+					}
+				}
+			],
+			"script": "section Section1;\r\nshared PropertyAssessments = let\r\n  AdfDoc = AzureStorage.BlobContents(\"https://nowateryalfredo.blob.core.windows.net/input/propertyvalue/Property_Assessments.csv\"),\r\n  Csv = Csv.Document(AdfDoc, [Delimiter = \",\", Encoding = TextEncoding.Utf8, QuoteStyle = QuoteStyle.Csv])\r\nin\r\n  Csv;\r\nshared UserQuery = let\r\n  Source = PropertyAssessments,\r\n  #\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),\r\n  #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\", {{\"ROLL_YEAR\", Int64.Type}, {\"ROLL_NUMBER\", Int64.Type}, {\"ADDRESS\", type text}, {\"ASSESSED_VALUE\", Int64.Type}, {\"ASSESSMENT_CLASS\", type text}, {\"ASSESSMENT_CLASS_DESCRIPTION\", type text}, {\"RE_ASSESSED_VALUE\", Int64.Type}, {\"NR_ASSESSED_VALUE\", Int64.Type}, {\"FL_ASSESSED_VALUE\", Int64.Type}, {\"COMM_CODE\", type text}, {\"COMM_NAME\", type text}, {\"LATITUDE\", type number}, {\"LONGITUDE\", type number}, {\"UNIQUE_KEY\", Int64.Type}, {\"YEAR_OF_CONSTRUCTION\", type text}, {\"LAND_USE_DESIGNATION\", type text}, {\"PROPERTY_TYPE\", type text}, {\"LAND_SIZE_SM\", type number}, {\"LAND_SIZE_SF\", Int64.Type}, {\"LAND_SIZE_AC\", type number}, {\"SUB_PROPERTY_USE\", type text}, {\"POINT\", type text}}),\r\n  #\"Filtered Rows\" = Table.SelectRows(#\"Changed Type\", each [ASSESSMENT_CLASS_DESCRIPTION] <> \"Residential\"),\r\n  #\"Removed Columns\" = Table.RemoveColumns(#\"Filtered Rows\", {\"YEAR_OF_CONSTRUCTION\", \"LAND_SIZE_SM\", \"LAND_SIZE_AC\"}),\r\n  #\"Filtered Rows1\" = Table.SelectRows(#\"Removed Columns\", each [LAND_SIZE_SF] <> null),\r\n  #\"Reordered Columns\" = Table.ReorderColumns(#\"Filtered Rows1\", {\"UNIQUE_KEY\", \"ROLL_YEAR\", \"ROLL_NUMBER\", \"ADDRESS\", \"ASSESSED_VALUE\", \"ASSESSMENT_CLASS\", \"ASSESSMENT_CLASS_DESCRIPTION\", \"NR_ASSESSED_VALUE\", \"RE_ASSESSED_VALUE\", \"FL_ASSESSED_VALUE\", \"COMM_CODE\", \"COMM_NAME\", \"LATITUDE\", \"LONGITUDE\", \"LAND_USE_DESIGNATION\", \"PROPERTY_TYPE\", \"LAND_SIZE_SF\", \"SUB_PROPERTY_USE\", \"POINT\"}),\r\n  #\"Filtered Rows2\" = Table.SelectRows(#\"Reordered Columns\", each [ASSESSED_VALUE] <> 0 and [ASSESSMENT_CLASS_DESCRIPTION] = \"Non-residential\"),\r\n  #\"Reordered Columns1\" = Table.ReorderColumns(#\"Filtered Rows2\", {\"UNIQUE_KEY\", \"ROLL_YEAR\", \"ROLL_NUMBER\", \"ADDRESS\", \"ASSESSMENT_CLASS\", \"ASSESSMENT_CLASS_DESCRIPTION\", \"ASSESSED_VALUE\", \"NR_ASSESSED_VALUE\", \"RE_ASSESSED_VALUE\", \"FL_ASSESSED_VALUE\", \"COMM_CODE\", \"COMM_NAME\", \"LATITUDE\", \"LONGITUDE\", \"LAND_USE_DESIGNATION\", \"PROPERTY_TYPE\", \"LAND_SIZE_SF\", \"SUB_PROPERTY_USE\", \"POINT\"}),\r\n  #\"Removed Columns1\" = Table.RemoveColumns(#\"Reordered Columns1\", {\"NR_ASSESSED_VALUE\", \"RE_ASSESSED_VALUE\", \"FL_ASSESSED_VALUE\", \"POINT\", \"LATITUDE\", \"LONGITUDE\"})\r\nin\r\n  #\"Removed Columns1\";\r\n"
+		}
+	}
+}
